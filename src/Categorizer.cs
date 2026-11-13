@@ -1,13 +1,44 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace StackMeUp
 {
-    /// <summary>Dosyaları uzantısına göre yığın kategorilerine ayırır.</summary>
+    /// <summary>Kullanıcının tanımladığı yığın: uzantılar (".aep") ve/veya ad içindeki kelimeler ("fatura").</summary>
+    public sealed class CustomRule
+    {
+        public string Name { get; set; } = "";
+        /// <summary>Virgülle ayrılmış: "." ile başlayanlar uzantı, diğerleri dosya adında aranan kelime.</summary>
+        public string Match { get; set; } = "";
+
+        public override string ToString() => $"{Name}  —  {Match}";
+
+        IEnumerable<string> Tokens() =>
+            Match.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        public bool IsMatch(string path, bool isDirectory)
+        {
+            var name = Path.GetFileName(path);
+            var ext = isDirectory ? "" : Path.GetExtension(path);
+            foreach (var t in Tokens())
+            {
+                if (t.StartsWith('.'))
+                {
+                    if (!isDirectory && string.Equals(ext, t, StringComparison.OrdinalIgnoreCase)) return true;
+                }
+                else if (name.Contains(t, StringComparison.CurrentCultureIgnoreCase)) return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>Dosyaları yığınlara ayırır: önce kullanıcı kuralları, sonra uzantıya göre hazır türler.</summary>
     public static class Categorizer
     {
-        // Yığınların ekranda görünme sırası
+        public const string Recent = "Son eklenenler";
+
+        // Hazır yığınların ekranda görünme sırası
         public static readonly string[] Order =
         {
             "Klasörler", "Kısayollar", "Resimler", "Videolar", "Müzik", "PDF'ler",
@@ -36,8 +67,18 @@ namespace StackMeUp
             foreach (var e in exts) Map[e] = cat;
         }
 
-        public static string For(string path, bool isDirectory)
+        /// <summary>Tüm yığın adları, ekrandaki sırayla: Son eklenenler, kullanıcı kuralları, hazır türler.</summary>
+        public static List<string> AllNames(IEnumerable<CustomRule> rules) =>
+            new[] { Recent }
+                .Concat(rules.Select(r => r.Name).Where(n => !string.IsNullOrWhiteSpace(n)))
+                .Concat(Order)
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+        public static string For(string path, bool isDirectory, IEnumerable<CustomRule> rules)
         {
+            foreach (var r in rules)
+                if (!string.IsNullOrWhiteSpace(r.Name) && r.IsMatch(path, isDirectory)) return r.Name;
             if (isDirectory) return "Klasörler";
             return Map.TryGetValue(Path.GetExtension(path), out var c) ? c : "Diğer";
         }

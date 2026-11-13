@@ -46,14 +46,20 @@ namespace StackMeUp
         bool _showCount = true;
         public bool ShowCount { get => _showCount; set => Set(ref _showCount, value); }
 
+        /// <summary>Yığın açılınca görünen dosyaların simge boyutu.</summary>
+        double _itemSize = 32;
+        public double ItemSize { get => _itemSize; set => Set(ref _itemSize, value); }
 
         // ---- Davranış ----
         SortMode _sort = SortMode.Newest;
         public SortMode Sort { get => _sort; set { Set(ref _sort, value); Raise(nameof(SortIndex)); } }
         [JsonIgnore] public int SortIndex { get => (int)Sort; set => Sort = (SortMode)value; }
 
-        bool _singleOpen;
-        public bool SingleOpen { get => _singleOpen; set => Set(ref _singleOpen, value); }
+        bool _showRecent = true;
+        public bool ShowRecent { get => _showRecent; set => Set(ref _showRecent, value); }
+
+        int _recentHours = 24;
+        public int RecentHours { get => _recentHours; set => Set(ref _recentHours, Math.Clamp(value, 1, 24 * 30)); }
 
         bool _closeOnDesktop = true;
         public bool CloseOnDesktopClick { get => _closeOnDesktop; set => Set(ref _closeOnDesktop, value); }
@@ -64,6 +70,7 @@ namespace StackMeUp
         // ---- Yığınlar ve klasörler ----
         public List<string> HiddenCategories { get; set; } = new();
         public List<string> ExtraFolders { get; set; } = new();
+        public List<CustomRule> CustomRules { get; set; } = new();
 
         /// <summary>Liste gibi içten değişen ayarlar için değişiklik bildirimi.</summary>
         public void Touch(string name) => Raise(name);

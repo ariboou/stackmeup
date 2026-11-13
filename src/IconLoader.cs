@@ -10,7 +10,7 @@ namespace StackMeUp
     /// <summary>Simgeleri arka planda tek bir STA iş parçacığında yükler ve önbelleğe alır.</summary>
     public sealed class IconLoader
     {
-        const int Size = 96; // 48 DIP'i yüksek DPI'da da net göstermek için
+        const int Size = 128; // en büyük simge boyutu (80 DIP) yüksek DPI'da da net kalsın
         readonly BlockingCollection<StackItem> _queue = new();
         readonly ConcurrentDictionary<string, ImageSource> _cache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -21,7 +21,14 @@ namespace StackMeUp
             t.Start();
         }
 
-        static string Key(StackItem i) => i.Path + "|" + i.Modified.Ticks;
+        static string Key(StackItem i) => i.Key;
+
+        /// <summary>Artık masaüstünde olmayan (silinmiş ya da değişmiş) dosyaların simgelerini bellekten atar.</summary>
+        public void Prune(ICollection<string> liveKeys)
+        {
+            foreach (var key in _cache.Keys)
+                if (!liveKeys.Contains(key)) _cache.TryRemove(key, out _);
+        }
 
         public void Request(IEnumerable<StackItem> items)
         {

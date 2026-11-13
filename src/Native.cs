@@ -37,6 +37,23 @@ namespace StackMeUp
         public static void SendToBottom(IntPtr hwnd) =>
             SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
+        [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
+        static readonly IntPtr HWND_TOP = IntPtr.Zero, HWND_NOTOPMOST = new(-2);
+        const uint GW_HWNDPREV = 3;
+
+        /// <summary>
+        /// Açılır pencereyi (WPF Popup normalde "her zaman üstte"dir) sıradan bir pencereye çevirip
+        /// z-sırasında <paramref name="anchor"/>'un hemen üstüne koyar: diğer uygulamaların üstünde asılı kalmaz.
+        /// </summary>
+        public static void PlaceJustAbove(IntPtr popup, IntPtr anchor)
+        {
+            const uint flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE;
+            SetWindowPos(popup, HWND_NOTOPMOST, 0, 0, 0, 0, flags);
+            var above = GetWindow(anchor, GW_HWNDPREV);
+            if (above == popup) return;
+            SetWindowPos(popup, above == IntPtr.Zero ? HWND_TOP : above, 0, 0, 0, 0, flags);
+        }
+
         /// <summary>WndProc içinden çağrılır; pencerenin diğer pencerelerin önüne geçmesini engeller.</summary>
         public static void KeepAtBottom(IntPtr lParam)
         {

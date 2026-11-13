@@ -26,6 +26,7 @@ namespace StackMeUp
             BuildSwatches();
             BuildCategories();
             RefreshFolders();
+            RefreshRules();
         }
 
         // ---- Vurgu rengi ----
@@ -48,11 +49,77 @@ namespace StackMeUp
             }
         }
 
+        // ---- Kurallar ----
+        void RefreshRules(int select = -1)
+        {
+            RulesList.ItemsSource = null;
+            RulesList.ItemsSource = _s.CustomRules.ToList();
+            if (select >= 0 && select < _s.CustomRules.Count) RulesList.SelectedIndex = select;
+        }
+
+        void RulesChanged(int select = -1)
+        {
+            _s.Touch(nameof(Settings.CustomRules));
+            RefreshRules(select);
+            BuildCategories();
+        }
+
+        CustomRule? ReadRuleInputs()
+        {
+            var name = RuleName.Text.Trim();
+            var match = RuleMatch.Text.Trim();
+            if (name.Length == 0 || match.Length == 0)
+            {
+                MessageBox.Show(this, "Yığın adı ve eşleşenler boş olamaz.\nÖrnek: Projeler  →  .aep, .prproj, .c4d", "StackMeUp");
+                return null;
+            }
+            return new CustomRule { Name = name, Match = match };
+        }
+
+        void RulesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (RulesList.SelectedItem is not CustomRule r) return;
+            RuleName.Text = r.Name;
+            RuleMatch.Text = r.Match;
+        }
+
+        void AddRule_Click(object sender, RoutedEventArgs e)
+        {
+            if (ReadRuleInputs() is not { } rule) return;
+            _s.CustomRules.Add(rule);
+            RulesChanged(_s.CustomRules.Count - 1);
+        }
+
+        void UpdateRule_Click(object sender, RoutedEventArgs e)
+        {
+            int i = RulesList.SelectedIndex;
+            if (i < 0 || ReadRuleInputs() is not { } rule) return;
+            _s.CustomRules[i] = rule;
+            RulesChanged(i);
+        }
+
+        void RemoveRule_Click(object sender, RoutedEventArgs e)
+        {
+            int i = RulesList.SelectedIndex;
+            if (i < 0) return;
+            _s.CustomRules.RemoveAt(i);
+            RuleName.Text = RuleMatch.Text = "";
+            RulesChanged();
+        }
+
+        void MoveRuleUp_Click(object sender, RoutedEventArgs e)
+        {
+            int i = RulesList.SelectedIndex;
+            if (i <= 0) return;
+            (_s.CustomRules[i - 1], _s.CustomRules[i]) = (_s.CustomRules[i], _s.CustomRules[i - 1]);
+            RulesChanged(i - 1);
+        }
+
         // ---- Yığınlar ----
         void BuildCategories()
         {
             CategoriesPanel.Children.Clear();
-            foreach (var cat in Categorizer.Order)
+            foreach (var cat in Categorizer.AllNames(_s.CustomRules))
             {
                 var cb = new CheckBox { Content = cat, IsChecked = !_s.HiddenCategories.Contains(cat) };
                 cb.Click += (_, _) =>

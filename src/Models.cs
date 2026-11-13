@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
@@ -20,11 +21,12 @@ namespace StackMeUp
 
     public sealed class StackItem : Observable
     {
-        public StackItem(string path, bool isDirectory, DateTime modified, long size)
+        public StackItem(string path, bool isDirectory, DateTime modified, DateTime created, long size)
         {
             Path = path;
             IsDirectory = isDirectory;
             Modified = modified;
+            Created = created;
             Size = size;
             Extension = isDirectory ? "" : System.IO.Path.GetExtension(path).ToLowerInvariant();
             // Kısayollarda ".lnk" / ".url" uzantısını gösterme
@@ -38,7 +40,11 @@ namespace StackMeUp
         public string Extension { get; }
         public bool IsDirectory { get; }
         public DateTime Modified { get; }
+        public DateTime Created { get; }
         public long Size { get; }
+
+        /// <summary>Dosya değişmediği sürece aynı kalır; simge önbelleği ve değişiklik tespiti bunu kullanır.</summary>
+        public string Key => Path + "|" + Modified.Ticks;
 
         ImageSource? _icon;
         public ImageSource? Icon { get => _icon; set => Set(ref _icon, value); }
@@ -64,6 +70,10 @@ namespace StackMeUp
 
         public string Name { get; }
         public List<StackItem> Items { get; }
+        public bool IsRecent => Name == Categorizer.Recent;
+
+        /// <summary>İçerik aynıysa aynı imza: yeniden taramada değişmeyen yığınlar olduğu gibi korunur.</summary>
+        public string Signature => string.Join("\n", Items.Select(i => i.Key));
         public int Count => Items.Count;
         public string CountText => Items.Count == 1 ? "1 öğe" : $"{Items.Count} öğe";
         public ImageSource? Cover => Items.Count > 0 ? Items[0].Icon : null;

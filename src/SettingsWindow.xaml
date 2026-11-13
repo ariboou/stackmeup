@@ -1,10 +1,16 @@
 <Window x:Class="StackMeUp.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         Title="StackMeUp Ayarları" Icon="/assets/StackMeUp.ico" Width="560" Height="600" ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" FontSize="13"
         Background="#F4F5F7" UseLayoutRounding="True">
     <Window.Resources>
+        <sys:Int32 x:Key="H6">6</sys:Int32>
+        <sys:Int32 x:Key="H12">12</sys:Int32>
+        <sys:Int32 x:Key="H24">24</sys:Int32>
+        <sys:Int32 x:Key="H72">72</sys:Int32>
+        <sys:Int32 x:Key="H168">168</sys:Int32>
         <Style x:Key="Section" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -55,11 +61,18 @@
                                 <RadioButton Content="Dikey (alt alta)" IsChecked="{Binding IsVertical}"/>
                             </StackPanel>
 
-                            <TextBlock Style="{StaticResource Section}" Text="Simge boyutu"/>
+                            <TextBlock Style="{StaticResource Section}" Text="Yığın simgesi boyutu"/>
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Right" Width="44" TextAlignment="Right" Text="{Binding IconSize, StringFormat={}{0:0} px}"/>
                                 <Slider Minimum="32" Maximum="80" TickFrequency="4" IsSnapToTickEnabled="True" Value="{Binding IconSize}"/>
                             </DockPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Açılan dosyaların boyutu"/>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Width="44" TextAlignment="Right" Text="{Binding ItemSize, StringFormat={}{0:0} px}"/>
+                                <Slider Minimum="20" Maximum="64" TickFrequency="4" IsSnapToTickEnabled="True" Value="{Binding ItemSize}"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Hint}" Text="Bir yığına tıklayınca açılan listedeki simgelerin ve yazıların boyutu."/>
 
                             <TextBlock Style="{StaticResource Section}" Text="Arka plan koyuluğu"/>
                             <DockPanel>
@@ -101,7 +114,20 @@
 
                             <TextBlock Style="{StaticResource Section}" Text="Açma / kapama"/>
                             <CheckBox Content="Masaüstüne ya da başka bir pencereye tıklayınca yığınları kapat" IsChecked="{Binding CloseOnDesktopClick}"/>
-                            <CheckBox Content="Dikey düzende aynı anda yalnızca bir yığın açık olsun" IsChecked="{Binding SingleOpen}"/>
+                            <TextBlock Style="{StaticResource Hint}" Text="Esc tuşu da açık yığını kapatır. Bir dosyanın üstündeyken Boşluk tuşu onu açmadan önizler (QuickLook ile)."/>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Son eklenenler"/>
+                            <CheckBox Content="Yeni gelen dosyaları en başta ayrı bir yığında da göster" IsChecked="{Binding ShowRecent}"/>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="Şu kadar yeni olanlar:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox Width="120" SelectedValuePath="Tag" SelectedValue="{Binding RecentHours}" IsEnabled="{Binding ShowRecent}">
+                                    <ComboBoxItem Content="Son 6 saat" Tag="{StaticResource H6}"/>
+                                    <ComboBoxItem Content="Son 12 saat" Tag="{StaticResource H12}"/>
+                                    <ComboBoxItem Content="Son 1 gün" Tag="{StaticResource H24}"/>
+                                    <ComboBoxItem Content="Son 3 gün" Tag="{StaticResource H72}"/>
+                                    <ComboBoxItem Content="Son 1 hafta" Tag="{StaticResource H168}"/>
+                                </ComboBox>
+                            </StackPanel>
 
                             <TextBlock Style="{StaticResource Section}" Text="Sistem"/>
                             <CheckBox Content="Windows'un masaüstü simgelerini gizle" IsChecked="{Binding HideDesktopIcons}"/>
@@ -123,6 +149,36 @@
                         </StackPanel>
                     </Border>
                 </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= KURALLAR ================= -->
+            <TabItem Header="  Kurallar  ">
+                <Border Style="{StaticResource Card}" Margin="0,10,0,0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Style="{StaticResource Section}" Text="Kendi yığınların"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
+                                       Text="Eşleşen dosyalar hazır türlere girmeden önce bu yığınlara gider. Virgülle ayır: nokta ile başlayanlar uzantıdır (.aep, .prproj), diğerleri dosya adında aranır (fatura, ekran görüntüsü). Üstteki kural önce uygulanır."/>
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock Text="Yığın adı" Width="110" VerticalAlignment="Center"/>
+                                <TextBox x:Name="RuleName" Padding="4,3"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,10">
+                                <TextBlock Text="Eşleşenler" Width="110" VerticalAlignment="Center"/>
+                                <TextBox x:Name="RuleMatch" Padding="4,3"/>
+                            </DockPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Ekle" Click="AddRule_Click"/>
+                                <Button Content="Güncelle" Click="UpdateRule_Click"/>
+                                <Button Content="Sil" Click="RemoveRule_Click"/>
+                                <Button Content="Yukarı" Click="MoveRuleUp_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <ListBox x:Name="RulesList" MinHeight="120" SelectionChanged="RulesList_SelectionChanged"/>
+                    </DockPanel>
+                </Border>
             </TabItem>
 
             <!-- ================= KLASÖRLER ================= -->
