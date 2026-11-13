@@ -37,6 +37,17 @@ namespace StackMeUp
         public static void SendToBottom(IntPtr hwnd) =>
             SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
+        [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int value, int size);
+
+        /// <summary>Pencerenin Windows başlık çubuğunu koyu/açık yapar (Windows 10 20H1+ ve 11).</summary>
+        public static void SetDarkTitleBar(IntPtr hwnd, bool dark)
+        {
+            int v = dark ? 1 : 0;
+            // 20 = DWMWA_USE_IMMERSIVE_DARK_MODE; daha eski Windows 10 sürümlerinde 19
+            if (DwmSetWindowAttribute(hwnd, 20, ref v, sizeof(int)) != 0)
+                DwmSetWindowAttribute(hwnd, 19, ref v, sizeof(int));
+        }
+
         [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
         static readonly IntPtr HWND_TOP = IntPtr.Zero, HWND_NOTOPMOST = new(-2);
         const uint GW_HWNDPREV = 3;

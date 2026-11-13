@@ -16,18 +16,69 @@ namespace StackMeUp
         };
 
         readonly Settings _s;
+        Palette _p;
 
         public SettingsWindow(Settings settings)
         {
             _s = settings;
+            _p = Theme.ForSettings(_s);
             InitializeComponent();
             DataContext = _s;
             AutoStartBox.IsChecked = Settings.AutoStart;
-            BuildSwatches();
-            BuildBgSwatches();
+            ApplyTheme();
             BuildCategories();
             RefreshFolders();
             RefreshRules();
+
+            // Tema/renk değişince pencere anında yeniden boyansın
+            _s.PropertyChanged += OnSettingChanged;
+            Microsoft.Win32.SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
+            SourceInitialized += (_, _) => Desktop.SetDarkTitleBar(new System.Windows.Interop.WindowInteropHelper(this).Handle, _p.Dark);
+            Closed += (_, _) =>
+            {
+                _s.PropertyChanged -= OnSettingChanged;
+                Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
+            };
+        }
+
+        void OnSettingChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(Settings.Theme) or nameof(Settings.BackgroundColor) or nameof(Settings.Accent))
+                ApplyTheme();
+        }
+
+        void OnSystemPreferenceChanged(object sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
+        {
+            if (e.Category == Microsoft.Win32.UserPreferenceCategory.General && _s.Theme == ThemeMode.System)
+                Dispatcher.BeginInvoke(ApplyTheme);
+        }
+
+        static SolidColorBrush B(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
+
+        /// <summary>Paleti pencerenin kaynaklarına yazar; tüm kontroller DynamicResource ile anında güncellenir.</summary>
+        void ApplyTheme()
+        {
+            _p = Theme.ForSettings(_s);
+            Resources["B.Window"] = B(_p.Window);
+            Resources["B.Sidebar"] = B(_p.Sidebar);
+            Resources["B.Surface"] = B(_p.Surface);
+            Resources["B.Border"] = B(_p.Border);
+            Resources["B.Text"] = B(_p.Text);
+            Resources["B.SubText"] = B(_p.SubText);
+            Resources["B.Control"] = B(_p.Control);
+            Resources["B.ControlHover"] = B(_p.ControlHover);
+            Resources["B.Track"] = B(_p.Track);
+            Resources["B.Accent"] = B(_p.Accent);
+            Resources["B.OnAccent"] = B(_p.OnAccent);
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            if (hwnd != IntPtr.Zero) Desktop.SetDarkTitleBar(hwnd, _p.Dark);
+            BuildSwatches();
+            BuildBgSwatches();
+        }
+
+        void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape) { Close(); e.Handled = true; }
         }
 
         // ---- Vurgu rengi ----
@@ -37,15 +88,8 @@ namespace StackMeUp
             foreach (var hex in AccentColors)
             {
                 var color = (Color)ColorConverter.ConvertFromString(hex);
-                bool selected = string.Equals(hex, _s.Accent, StringComparison.OrdinalIgnoreCase);
-                var dot = new Border
-                {
-                    Width = 28, Height = 28, CornerRadius = new CornerRadius(14), Margin = new Thickness(0, 0, 10, 0),
-                    Background = new SolidColorBrush(color), Cursor = System.Windows.Input.Cursors.Hand,
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(0x1F, 0x23, 0x28)),
-                    BorderThickness = new Thickness(selected ? 3 : 0), ToolTip = hex,
-                };
-                dot.MouseLeftButtonUp += (_, _) => { _s.Accent = hex; BuildSwatches(); };
+                var dot = Dot(new SolidColorBrush(color), string.Equals(hex, _s.Accent, StringComparison.OrdinalIgnoreCase), hex);
+                dot.MouseLeftButtonUp += (_, _) => _s.Accent = hex;
                 Swatches.Children.Add(dot);
             }
         }
@@ -57,14 +101,20 @@ namespace StackMeUp
             ("#3A2A1E", "Kahve"), ("#12332B", "Orman"), ("#F5EBDD", "Krem"), ("#E7F0FF", "Buz mavisi"), ("#FFE8DF", "Şeftali"),
         };
 
+        /// <summary>Renk seçme dairesi. Seçili olan, temanın yazı renginde bir halkayla belirtilir.</summary>
         Border Dot(Brush fill, bool selected, string tip)
         {
+            var inner = new Border
+            {
+                CornerRadius = new CornerRadius(13), Background = fill,
+                BorderBrush = B(_p.Track), BorderThickness = new Thickness(1.5),
+            };
             return new Border
             {
-                Width = 28, Height = 28, CornerRadius = new CornerRadius(14), Margin = new Thickness(0, 0, 10, 6),
-                Background = fill, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = tip,
-                BorderBrush = new SolidColorBrush(selected ? Color.FromRgb(0x1F, 0x23, 0x28) : Color.FromRgb(0xC9, 0xCD, 0xD3)),
-                BorderThickness = new Thickness(selected ? 3 : 1),
+                Width = 32, Height = 32, CornerRadius = new CornerRadius(16), Margin = new Thickness(0, 0, 8, 6),
+                Padding = new Thickness(selected ? 3 : 2), Child = inner,
+                Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = tip,
+                BorderBrush = selected ? B(_p.Text) : Brushes.Transparent, BorderThickness = new Thickness(2),
             };
         }
 
@@ -96,7 +146,7 @@ namespace StackMeUp
                 BgSwatches.Children.Add(dot);
             }
 
-            var custom = new Button { Content = "Özel…", Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 0, 6), VerticalAlignment = VerticalAlignment.Center };
+            var custom = new Button { Content = "Özel renk…", Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(4, 0, 0, 6), VerticalAlignment = VerticalAlignment.Center };
             custom.Click += (_, _) => PickCustomBackground();
             BgSwatches.Children.Add(custom);
         }

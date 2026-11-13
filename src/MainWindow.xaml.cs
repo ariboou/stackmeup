@@ -176,40 +176,13 @@ namespace StackMeUp
         static SolidColorBrush Brush(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
         static byte A(double v) => (byte)Math.Clamp(v * 255, 0, 255);
         static Color WithAlpha(Color c, double a) => Color.FromArgb(A(a), c.R, c.G, c.B);
-        static Color Mix(Color a, Color b, double t) => Color.FromRgb(
-            (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
-        static double Luminance(Color c) => (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0;
-
-        /// <summary>Windows "uygulama modu" koyu mu? (Ayarlar > Kişiselleştirme > Renkler)</summary>
-        static bool WindowsUsesDarkTheme()
-        {
-            try
-            {
-                using var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-                return k?.GetValue("AppsUseLightTheme") is int v ? v == 0 : true;
-            }
-            catch { return true; }
-        }
+        static Color Mix(Color a, Color b, double t) => Theme.Mix(a, b, t);
 
         void ApplyAppearance()
         {
-            Color accent;
-            try { accent = (Color)ColorConverter.ConvertFromString(_s.Accent); }
-            catch { accent = Color.FromRgb(0x4C, 0x8D, 0xFF); }
-
-            // Zemin rengi: kullanıcının seçtiği renk ya da temanın kendi rengi
-            bool darkTheme = _s.Theme switch
-            {
-                ThemeMode.Dark => true,
-                ThemeMode.Light => false,
-                _ => WindowsUsesDarkTheme(),
-            };
-            Color baseColor = darkTheme ? Color.FromRgb(0x1A, 0x1A, 0x1A) : Color.FromRgb(0xF6, 0xF6, 0xF7);
-            if (!string.IsNullOrWhiteSpace(_s.BackgroundColor))
-                try { baseColor = (Color)ColorConverter.ConvertFromString(_s.BackgroundColor); } catch { }
-
-            // Yazı rengi zeminin açıklığına göre seçilir: her renkte okunur kalsın
-            bool darkBase = Luminance(baseColor) < 0.5;
+            var accent = Theme.Accent(_s);
+            // Zemin: kullanıcının seçtiği renk ya da temanın rengi. Yazı rengi zeminin açıklığına göre seçilir.
+            var (baseColor, darkBase) = Theme.Base(_s);
             Color text = darkBase ? Colors.White : Color.FromRgb(0x1F, 0x23, 0x28);
             Color shade = darkBase ? Colors.White : Colors.Black; // üzerine gelince açılan/koyulan ton
 
