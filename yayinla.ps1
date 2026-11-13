@@ -1,4 +1,4 @@
-# StackMeUp'ı başkasına gönderilebilecek tek bir exe olarak hazırlar: dagitim\StackMeUp.exe
+﻿# StackMeUp'ı başkasına gönderilebilecek tek bir exe olarak hazırlar: dagitim\StackMeUp.exe
 # .NET kurulu olmayan bilgisayarda da çalışır. Sıkıştırma kapalı: dosya büyük ama bellek kullanımı düşük.
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot

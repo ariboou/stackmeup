@@ -125,7 +125,6 @@ namespace StackMeUp
             var wa = WorkArea();
             MaxHeight = Math.Max(200, wa.Bottom - Top - 8);
             HList.MaxWidth = Math.Max(140, wa.Right - Left - 8);
-            Resources["SideChevron"] = OpensLeft() ? "" : "";
         }
 
         /// <summary>Dikey düzende şerit, ekranda daha çok yer olan tarafa açılır.</summary>
@@ -195,7 +194,6 @@ namespace StackMeUp
             Resources["IconSize"] = s;
             Resources["CoverSize"] = s + 18;
             Resources["HeaderWidth"] = Math.Max(96, s + 48);
-            Resources["VerticalWidth"] = 300.0;
             Resources["FanVisibility"] = _s.FanPreview ? Visibility.Visible : Visibility.Collapsed;
             Resources["CountVisibility"] = _s.ShowCount ? Visibility.Visible : Visibility.Collapsed;
 
@@ -206,7 +204,6 @@ namespace StackMeUp
             Resources["ItemFontSize"] = font;
             Resources["ItemTileWidth"] = Math.Max(76, i + 44);
             Resources["TileTextHeight"] = Math.Ceiling(font * 2.75);
-            Resources["SideChevron"] = "";
         }
 
         void ApplyLayout()
@@ -489,7 +486,6 @@ namespace StackMeUp
             SidePopup.PlacementTarget = header;
             SidePopup.Placement = left ? PlacementMode.Left : PlacementMode.Right;
             SideBody.RenderTransformOrigin = left ? new Point(1, 0.5) : new Point(0, 0.5);
-            Resources["SideChevron"] = left ? "" : "";
 
             // Konumu yenilemek için kapatıp aç; şeridi başlığa dikeyde ortala
             SidePopup.IsOpen = false;

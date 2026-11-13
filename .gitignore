@@ -3,3 +3,4 @@ obj/
 dagitim/
 .vs/
 *.user
+tools/*.png
