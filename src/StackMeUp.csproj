@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StackMeUp</AssemblyName>
+    <RootNamespace>StackMeUp</RootNamespace>
+    <ApplicationIcon>assets\StackMeUp.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="assets\StackMeUp.ico" />
+    <None Remove="assets\StackMeUp-256.png" />
+  </ItemGroup>
+</Project>

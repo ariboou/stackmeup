@@ -1,0 +1,148 @@
+<Window x:Class="StackMeUp.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="StackMeUp Ayarları" Icon="/assets/StackMeUp.ico" Width="560" Height="600" ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" FontSize="13"
+        Background="#F4F5F7" UseLayoutRounding="True">
+    <Window.Resources>
+        <Style x:Key="Section" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+            <Setter Property="Foreground" Value="#1F2328"/>
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,5"/>
+        </Style>
+        <Style TargetType="RadioButton">
+            <Setter Property="Margin" Value="0,0,18,0"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,2,16,14"/>
+            <Setter Property="BorderBrush" Value="#E3E5E8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="14">
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Hint}" VerticalAlignment="Center"
+                       Text="Değişiklikler anında uygulanır ve kaydedilir."/>
+            <Button DockPanel.Dock="Right" Content="Kapat" IsCancel="True" Margin="0" Click="Close_Click"/>
+        </DockPanel>
+
+        <TabControl Padding="0" Background="Transparent" BorderThickness="0">
+            <!-- ================= GÖRÜNÜM ================= -->
+            <TabItem Header="  Görünüm  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Border Style="{StaticResource Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Section}" Text="Düzen"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="Yatay (soldan sağa)" IsChecked="{Binding IsHorizontal}"/>
+                                <RadioButton Content="Dikey (alt alta)" IsChecked="{Binding IsVertical}"/>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Simge boyutu"/>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Width="44" TextAlignment="Right" Text="{Binding IconSize, StringFormat={}{0:0} px}"/>
+                                <Slider Minimum="32" Maximum="80" TickFrequency="4" IsSnapToTickEnabled="True" Value="{Binding IconSize}"/>
+                            </DockPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Arka plan koyuluğu"/>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Width="44" TextAlignment="Right" Text="{Binding BackgroundOpacity, StringFormat={}{0:P0}}"/>
+                                <Slider Minimum="0.15" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding BackgroundOpacity}"/>
+                            </DockPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Vurgu rengi"/>
+                            <WrapPanel x:Name="Swatches"/>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Yığın kapağı"/>
+                            <CheckBox Content="İlk üç dosyayı yelpaze gibi göster" IsChecked="{Binding FanPreview}"/>
+                            <CheckBox Content="Dosya sayısı rozetini göster" IsChecked="{Binding ShowCount}"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= DAVRANIŞ ================= -->
+            <TabItem Header="  Davranış  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Border Style="{StaticResource Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Section}" Text="Konum"/>
+                            <CheckBox Content="Konumu kilitle" IsChecked="{Binding LockPosition}"/>
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="Kilit kapalıyken herhangi bir yığını tutup sürükleyerek paneli ekranda (ikinci monitör dahil) istediğin yere taşıyabilirsin."/>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="Sağ üst köşeye al" Click="ResetPosition_Click"/>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Sıralama"/>
+                            <ComboBox Width="220" HorizontalAlignment="Left" SelectedIndex="{Binding SortIndex}">
+                                <ComboBoxItem Content="En yeni önce"/>
+                                <ComboBoxItem Content="Ada göre (A → Z)"/>
+                                <ComboBoxItem Content="Boyuta göre (büyük önce)"/>
+                                <ComboBoxItem Content="Türe göre (uzantı)"/>
+                            </ComboBox>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Açma / kapama"/>
+                            <CheckBox Content="Masaüstüne ya da başka bir pencereye tıklayınca yığınları kapat" IsChecked="{Binding CloseOnDesktopClick}"/>
+                            <CheckBox Content="Dikey düzende aynı anda yalnızca bir yığın açık olsun" IsChecked="{Binding SingleOpen}"/>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Sistem"/>
+                            <CheckBox Content="Windows'un masaüstü simgelerini gizle" IsChecked="{Binding HideDesktopIcons}"/>
+                            <CheckBox x:Name="AutoStartBox" Content="Windows ile birlikte başlat" Click="AutoStart_Click"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= YIĞINLAR ================= -->
+            <TabItem Header="  Yığınlar  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Border Style="{StaticResource Card}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Section}" Text="Gösterilecek yığınlar"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8"
+                                       Text="İşaretini kaldırdığın türler panelde görünmez. Dosyalar silinmez, yalnızca gizlenir."/>
+                            <UniformGrid x:Name="CategoriesPanel" Columns="2"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= KLASÖRLER ================= -->
+            <TabItem Header="  Klasörler  ">
+                <Border Style="{StaticResource Card}" Margin="0,10,0,0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Style="{StaticResource Section}" Text="Ek klasörler"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
+                                       Text="Masaüstü her zaman dahildir. Buraya eklediğin klasörlerdeki dosyalar da türlerine göre aynı yığınlara katılır."/>
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Klasör ekle…" Click="AddFolder_Click"/>
+                            <Button Content="İndirilenler'i ekle" Click="AddDownloads_Click"/>
+                            <Button Content="Kaldır" Click="RemoveFolder_Click"/>
+                        </StackPanel>
+                        <ListBox x:Name="FoldersList" MinHeight="160"/>
+                    </DockPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

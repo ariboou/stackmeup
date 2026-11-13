@@ -1,0 +1,196 @@
+<Window x:Class="StackMeUp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:StackMeUp"
+        Title="StackMeUp" SizeToContent="WidthAndHeight"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="False" ResizeMode="NoResize" ShowActivated="False"
+        FontFamily="Segoe UI" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <ContextMenu x:Key="ItemMenu">
+            <MenuItem Header="Aç" Click="Menu_Open" FontWeight="SemiBold"/>
+            <MenuItem Header="Dosya konumunu aç" Click="Menu_Reveal"/>
+            <MenuItem Header="Yolu kopyala" Click="Menu_CopyPath"/>
+        </ContextMenu>
+
+        <ContextMenu x:Key="HeaderMenu">
+            <MenuItem Header="Ayarlar…" Click="Menu_Settings" FontWeight="SemiBold"/>
+            <MenuItem Header="Yenile" Click="Menu_Refresh"/>
+            <MenuItem Header="Tümünü kapat" Click="Menu_CollapseAll"/>
+        </ContextMenu>
+
+        <!-- Yığın başlığı kutusu -->
+        <Style x:Key="HeaderBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource HeaderBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HeaderHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Açılan yığının içindeki dosya kutucuğu -->
+        <Style x:Key="ItemTile" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#33FFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate x:Key="ItemTemplate" DataType="{x:Type local:StackItem}">
+            <!-- Tek satır: simge + ad. Açılan yığında alt alta, tek sütun halinde dizilir -->
+            <Border Style="{StaticResource ItemTile}" Padding="8,5" Margin="0,1"
+                    ToolTip="{Binding Path}" ContextMenu="{StaticResource ItemMenu}"
+                    MouseLeftButtonDown="Item_MouseDown" MouseMove="Item_MouseMove" MouseLeftButtonUp="Item_MouseUp">
+                <Border.RenderTransform><TranslateTransform/></Border.RenderTransform>
+                <DockPanel>
+                    <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="{DynamicResource RowIconSize}" Height="{DynamicResource RowIconSize}"
+                           RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="13" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Yığın kapağı: ilk üç dosya yelpaze gibi açılmış + sayı rozeti -->
+        <DataTemplate x:Key="CoverTemplate" DataType="{x:Type local:StackGroup}">
+            <Grid Width="{DynamicResource CoverSize}" Height="{DynamicResource CoverSize}">
+                <Image Source="{Binding Preview3}" Width="{DynamicResource IconSize}" Height="{DynamicResource IconSize}"
+                       Visibility="{DynamicResource FanVisibility}" RenderTransformOrigin="0.5,0.85" Opacity="0.85"
+                       RenderOptions.BitmapScalingMode="HighQuality">
+                    <Image.RenderTransform>
+                        <TransformGroup><RotateTransform Angle="-15"/><TranslateTransform X="-6" Y="1"/></TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+                <Image Source="{Binding Preview2}" Width="{DynamicResource IconSize}" Height="{DynamicResource IconSize}"
+                       Visibility="{DynamicResource FanVisibility}" RenderTransformOrigin="0.5,0.85" Opacity="0.92"
+                       RenderOptions.BitmapScalingMode="HighQuality">
+                    <Image.RenderTransform>
+                        <TransformGroup><RotateTransform Angle="11"/><TranslateTransform X="6" Y="1"/></TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+                <Image Source="{Binding Cover}" Width="{DynamicResource IconSize}" Height="{DynamicResource IconSize}"
+                       RenderOptions.BitmapScalingMode="HighQuality">
+                    <Image.Effect>
+                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.45"/>
+                    </Image.Effect>
+                </Image>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-4,0"
+                        Background="{DynamicResource AccentBrush}" CornerRadius="9" MinWidth="18" Height="18" Padding="5,0"
+                        Visibility="{DynamicResource CountVisibility}">
+                    <TextBlock Text="{Binding Count}" Foreground="White" FontSize="11" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- YATAY düzen: başlık kutusu -->
+        <DataTemplate x:Key="HHeaderTemplate" DataType="{x:Type local:StackGroup}">
+            <Border x:Name="Bd" Style="{StaticResource HeaderBorder}" Width="{DynamicResource HeaderWidth}"
+                    Padding="6,12,6,8" Margin="0,0,8,8" ContextMenu="{StaticResource HeaderMenu}"
+                    PreviewMouseLeftButtonDown="Header_Down" PreviewMouseMove="Header_Move" PreviewMouseLeftButtonUp="Header_Up">
+                <StackPanel>
+                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource CoverTemplate}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12.5" FontWeight="SemiBold"
+                               TextAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderActiveBrush}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- DİKEY düzen: başlık satırı + altında açılan içerik -->
+        <DataTemplate x:Key="VTemplate" DataType="{x:Type local:StackGroup}">
+            <StackPanel Margin="0,0,0,8" Width="{DynamicResource VerticalWidth}">
+                <Border x:Name="Bd" Style="{StaticResource HeaderBorder}" Padding="10,8,14,8" ContextMenu="{StaticResource HeaderMenu}"
+                        PreviewMouseLeftButtonDown="Header_Down" PreviewMouseMove="Header_Move" PreviewMouseLeftButtonUp="Header_Up">
+                    <DockPanel>
+                        <ContentPresenter DockPanel.Dock="Left" Margin="0,0,12,0" Content="{Binding}" ContentTemplate="{StaticResource CoverTemplate}"/>
+                        <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
+                                   Foreground="#CCFFFFFF" FontSize="12" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <TextBlock.RenderTransform><RotateTransform Angle="0"/></TextBlock.RenderTransform>
+                        </TextBlock>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" Foreground="White" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding CountText}" Foreground="#B3FFFFFF" FontSize="12"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <Border x:Name="Body" Background="{DynamicResource PanelBrush}" CornerRadius="16" Margin="0,6,0,0" Padding="6" Opacity="0">
+                    <Border.LayoutTransform><ScaleTransform ScaleY="0"/></Border.LayoutTransform>
+                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource ItemTemplate}" Focusable="False"/>
+                </Border>
+            </StackPanel>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="Body" Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleY)"
+                                                 To="1" Duration="0:0:0.25">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="Body" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetName="Chevron" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                 To="180" Duration="0:0:0.25"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="Body" Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleY)"
+                                                 To="0" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseIn"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="Body" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetName="Chevron" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                 To="0" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" Focusable="False">
+        <StackPanel>
+            <!-- Dikey düzen -->
+            <ItemsControl x:Name="VList" ItemTemplate="{StaticResource VTemplate}" Focusable="False"/>
+
+            <!-- Yatay düzen: başlıklar soldan sağa, seçilen yığın altta açılır -->
+            <StackPanel x:Name="HRoot">
+                <ItemsControl x:Name="HList" ItemTemplate="{StaticResource HHeaderTemplate}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- Tıklanan yığının hemen altına tek sütun halinde düşen liste -->
+                <Border x:Name="HBody" Background="{DynamicResource PanelBrush}" CornerRadius="14" Padding="6"
+                        HorizontalAlignment="Left" Visibility="Collapsed">
+                    <Border.LayoutTransform><ScaleTransform ScaleY="1"/></Border.LayoutTransform>
+                    <ScrollViewer x:Name="HBodyScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+                        <ItemsControl x:Name="HBodyItems" ItemsSource="{Binding Items}" ItemTemplate="{StaticResource ItemTemplate}" Focusable="False"/>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
