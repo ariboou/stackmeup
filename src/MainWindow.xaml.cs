@@ -61,6 +61,12 @@ namespace StackMeUp
                 if (e.PropertyName == nameof(SystemParameters.WorkArea)) Dispatcher.BeginInvoke(UpdateLimits);
             };
             Loaded += (_, _) => Dispatcher.BeginInvoke(DispatcherPriority.Loaded, PlaceInitial);
+            // "Sistem" teması: Windows açık/koyu moda geçince renkler de değişsin
+            Microsoft.Win32.SystemEvents.UserPreferenceChanged += (_, e) =>
+            {
+                if (e.Category == Microsoft.Win32.UserPreferenceCategory.General && _s.Theme == ThemeMode.System)
+                    Dispatcher.BeginInvoke(ApplyAppearance);
+            };
 
             ResetWatchers();
             Rebuild();
@@ -127,13 +133,6 @@ namespace StackMeUp
             HList.MaxWidth = Math.Max(140, wa.Right - Left - 8);
         }
 
-        /// <summary>Dikey düzende şerit, ekranda daha çok yer olan tarafa açılır.</summary>
-        bool OpensLeft()
-        {
-            var wa = WorkArea();
-            return Left + ActualWidth / 2 > wa.Left + wa.Width / 2;
-        }
-
         // =====================================================================
         //  Ayarlar
         // =====================================================================
@@ -151,6 +150,8 @@ namespace StackMeUp
                 case nameof(Settings.Accent):
                 case nameof(Settings.FanPreview):
                 case nameof(Settings.ShowCount):
+                case nameof(Settings.Theme):
+                case nameof(Settings.BackgroundColor):
                     ApplyAppearance();
                     RefreshBody();
                     break;
@@ -174,6 +175,21 @@ namespace StackMeUp
 
         static SolidColorBrush Brush(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
         static byte A(double v) => (byte)Math.Clamp(v * 255, 0, 255);
+        static Color WithAlpha(Color c, double a) => Color.FromArgb(A(a), c.R, c.G, c.B);
+        static Color Mix(Color a, Color b, double t) => Color.FromRgb(
+            (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
+        static double Luminance(Color c) => (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0;
+
+        /// <summary>Windows "uygulama modu" koyu mu? (Ayarlar > Kişiselleştirme > Renkler)</summary>
+        static bool WindowsUsesDarkTheme()
+        {
+            try
+            {
+                using var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                return k?.GetValue("AppsUseLightTheme") is int v ? v == 0 : true;
+            }
+            catch { return true; }
+        }
 
         void ApplyAppearance()
         {
@@ -181,19 +197,38 @@ namespace StackMeUp
             try { accent = (Color)ColorConverter.ConvertFromString(_s.Accent); }
             catch { accent = Color.FromRgb(0x4C, 0x8D, 0xFF); }
 
+            // Zemin rengi: kullanıcının seçtiği renk ya da temanın kendi rengi
+            bool darkTheme = _s.Theme switch
+            {
+                ThemeMode.Dark => true,
+                ThemeMode.Light => false,
+                _ => WindowsUsesDarkTheme(),
+            };
+            Color baseColor = darkTheme ? Color.FromRgb(0x1A, 0x1A, 0x1A) : Color.FromRgb(0xF6, 0xF6, 0xF7);
+            if (!string.IsNullOrWhiteSpace(_s.BackgroundColor))
+                try { baseColor = (Color)ColorConverter.ConvertFromString(_s.BackgroundColor); } catch { }
+
+            // Yazı rengi zeminin açıklığına göre seçilir: her renkte okunur kalsın
+            bool darkBase = Luminance(baseColor) < 0.5;
+            Color text = darkBase ? Colors.White : Color.FromRgb(0x1F, 0x23, 0x28);
+            Color shade = darkBase ? Colors.White : Colors.Black; // üzerine gelince açılan/koyulan ton
+
             double o = _s.BackgroundOpacity;
-            Resources["HeaderBrush"] = Brush(Color.FromArgb(A(o), 0x1A, 0x1A, 0x1A));
-            Resources["HeaderHoverBrush"] = Brush(Color.FromArgb(A(o + 0.15), 0x2A, 0x2A, 0x2A));
-            Resources["HeaderActiveBrush"] = Brush(Color.FromArgb(A(o + 0.15),
-                (byte)(0x1A + (accent.R - 0x1A) * 0.25), (byte)(0x1A + (accent.G - 0x1A) * 0.25), (byte)(0x1A + (accent.B - 0x1A) * 0.25)));
-            Resources["PanelBrush"] = Brush(Color.FromArgb(A(o + 0.2), 0x14, 0x14, 0x14));
+            Resources["HeaderBrush"] = Brush(WithAlpha(baseColor, o));
+            Resources["HeaderHoverBrush"] = Brush(WithAlpha(Mix(baseColor, shade, 0.08), o + 0.15));
+            Resources["HeaderActiveBrush"] = Brush(WithAlpha(Mix(baseColor, accent, 0.25), o + 0.15));
+            // Açılan panel, başlıklar ne kadar saydam olursa olsun okunacak kadar dolu kalır
+            Resources["PanelBrush"] = Brush(WithAlpha(Mix(baseColor, darkBase ? Colors.Black : Colors.White, 0.25), Math.Max(0.88, o + 0.2)));
             Resources["AccentBrush"] = Brush(accent);
+            Resources["TextBrush"] = Brush(text);
+            Resources["ItemHoverBrush"] = Brush(Color.FromArgb(darkBase ? (byte)0x33 : (byte)0x1A, shade.R, shade.G, shade.B));
 
             // Yığın kapakları
             double s = _s.IconSize;
             Resources["IconSize"] = s;
             Resources["CoverSize"] = s + 18;
-            Resources["HeaderWidth"] = Math.Max(96, s + 48);
+            // Yelpazedeki eğik kartlar simgeden ~%30 geniş yer kaplar; kutucuk bunu taşırmadan sığdırır
+            Resources["HeaderWidth"] = Math.Max(96, Math.Round(s * 1.3 + 28));
             Resources["FanVisibility"] = _s.FanPreview ? Visibility.Visible : Visibility.Collapsed;
             Resources["CountVisibility"] = _s.ShowCount ? Visibility.Visible : Visibility.Collapsed;
 
@@ -308,7 +343,8 @@ namespace StackMeUp
             {
                 if (_s.HiddenCategories.Contains(name)) continue;
                 List<StackItem> items;
-                if (name == Categorizer.Recent)
+                if (name == Categorizer.System) items = Categorizer.SystemStackItems();
+                else if (name == Categorizer.Recent)
                 {
                     if (!_s.ShowRecent) continue;
                     var since = DateTime.Now.AddHours(-_s.RecentHours);
@@ -479,31 +515,44 @@ namespace StackMeUp
             VList.UpdateLayout();
             if (VList.ItemContainerGenerator.ContainerFromItem(g) is not FrameworkElement header) return;
 
-            bool left = OpensLeft();
+            // Şerit, panelin hangi yanında daha çok yer varsa oraya açılır ve o boşluğa sığacak kadar uzar
             var wa = WorkArea();
-            double avail = left ? Left - wa.Left : wa.Right - (Left + ActualWidth);
-            SideScroll.MaxWidth = Math.Max(200, avail - 40);
+            double spaceLeft = Left - wa.Left;
+            double spaceRight = wa.Right - (Left + ActualWidth);
+            bool preferLeft = spaceLeft > spaceRight;
+            SideScroll.MaxWidth = Math.Max(160, Math.Max(spaceLeft, spaceRight) - 32);
 
             bool sameGroup = SideBody.DataContext == g && SidePopup.IsOpen;
             SideBody.DataContext = g;
             SidePopup.PlacementTarget = header;
-            SidePopup.Placement = left ? PlacementMode.Left : PlacementMode.Right;
-            SideBody.RenderTransformOrigin = left ? new Point(1, 0.5) : new Point(0, 0.5);
+            // Özel yerleşim: başlığın tam yanına, dikeyde ortalı. Tercih edilen yana sığmazsa öbür yana geçer;
+            // böylece Windows şeridi ekrana sığdırmak için başlığın üstüne kaydırmaz.
+            SidePopup.Placement = PlacementMode.Custom;
+            SidePopup.HorizontalOffset = SidePopup.VerticalOffset = 0;
+            SidePopup.CustomPopupPlacementCallback = (popup, target, _) =>
+            {
+                double y = (target.Height - popup.Height) / 2;
+                var right = new CustomPopupPlacement(new Point(target.Width, y), PopupPrimaryAxis.Horizontal);
+                var left = new CustomPopupPlacement(new Point(-popup.Width, y), PopupPrimaryAxis.Horizontal);
+                return preferLeft ? new[] { left, right } : new[] { right, left };
+            };
 
-            // Konumu yenilemek için kapatıp aç; şeridi başlığa dikeyde ortala
+            // Konumu yenilemek için kapatıp aç
             SidePopup.IsOpen = false;
-            SideBody.UpdateLayout();
-            SidePopup.VerticalOffset = 0;
             SidePopup.IsOpen = true;
             SideBody.UpdateLayout();
-            double headerH = header.ActualHeight - 8; // alt boşluk hariç
-            SidePopup.VerticalOffset = (headerH - SideBody.ActualHeight) / 2;
             if (!sameGroup) SideScroll.ScrollToLeftEnd();
             KeepPopupNearDesktop();
 
+            // Hangi yana açıldığına göre animasyon başlangıç noktası ve öğelerin kayma yönü
+            bool openedLeft = preferLeft;
+            try { openedLeft = SideBody.PointToScreen(new Point(0, 0)).X < header.PointToScreen(new Point(0, 0)).X; }
+            catch (InvalidOperationException) { /* henüz ekrana bağlanmadıysa tercihi kullan */ }
+            SideBody.RenderTransformOrigin = openedLeft ? new Point(1, 0.5) : new Point(0, 0.5);
+
             if (!animate) { SnapOpen(SideBody, scale); return; }
             AnimateOpen(SideBody, scale, alongY: false);
-            Cascade(SideItems, vertical: false, fromStart: !left);
+            Cascade(SideItems, vertical: false, fromStart: !openedLeft);
         }
 
         /// <summary>Açılan şerit diğer uygulamaların üstünde asılı kalmasın; panelin hemen üstünde dursun.</summary>
@@ -639,6 +688,7 @@ namespace StackMeUp
                 Math.Abs(p.Y - _itemDown.Y) < SystemParameters.MinimumVerticalDragDistance) return;
 
             var item = _itemDownItem;
+            if (item.IsVirtual) return; // Geri Dönüşüm Kutusu gibi öğeler sürüklenmez, tıklanınca açılır
             _itemDownItem = null;
             ((UIElement)sender).ReleaseMouseCapture();
             var data = new DataObject(DataFormats.FileDrop, new[] { item.Path });
@@ -710,6 +760,11 @@ namespace StackMeUp
         void Menu_Gather(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is not StackGroup g) return;
+            if (g.Items.All(i => i.IsVirtual))
+            {
+                Warn("Bu yığındaki öğeler (Geri Dönüşüm Kutusu vb.) Windows'un sistem öğeleridir, bir klasöre taşınamaz.");
+                return;
+            }
             var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             var folderName = string.Concat(g.Name.Split(System.IO.Path.GetInvalidFileNameChars())).Trim();
             if (folderName.Length == 0) folderName = "Toplanan";
@@ -725,7 +780,7 @@ namespace StackMeUp
             catch (Exception ex) { Warn(ex.Message); return; }
             foreach (var item in g.Items.ToList())
             {
-                if (string.Equals(item.Path, target, StringComparison.OrdinalIgnoreCase)) continue;
+                if (item.IsVirtual || string.Equals(item.Path, target, StringComparison.OrdinalIgnoreCase)) continue;
                 var dest = UniquePath(System.IO.Path.Combine(target, System.IO.Path.GetFileName(item.Path)));
                 try
                 {
@@ -768,6 +823,7 @@ namespace StackMeUp
         /// <summary>Dosyayı açmadan önizler (QuickLook kuruluysa).</summary>
         static void Preview(string path)
         {
+            if (path.StartsWith("::", StringComparison.Ordinal)) { Open(path); return; }
             if (QuickLookExe is null)
             {
                 Warn("Önizleme için QuickLook uygulaması gerekiyor (Microsoft Store'da ücretsiz). Kurulu değilse dosya normal şekilde açılabilir.");
@@ -776,7 +832,12 @@ namespace StackMeUp
             Start(QuickLookExe, $"\"{path}\"");
         }
 
-        static void Open(string path) => Start(path, null);
+        /// <summary>Dosyayı varsayılan uygulamasıyla, sanal öğeyi (ör. Geri Dönüşüm Kutusu) Dosya Gezgini'nde açar.</summary>
+        static void Open(string path)
+        {
+            if (path.StartsWith("::", StringComparison.Ordinal)) Start("explorer.exe", "shell:" + path);
+            else Start(path, null);
+        }
 
         static void Start(string file, string? args)
         {

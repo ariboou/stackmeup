@@ -35,8 +35,24 @@ namespace StackMeUp
                 : System.IO.Path.GetFileName(path);
         }
 
+        /// <summary>
+        /// Sanal Windows öğesi (Geri Dönüşüm Kutusu, Bu bilgisayar…). Path "::{CLSID}" biçimindedir.
+        /// Simgesi her taramada yeniden alınır (ör. çöp kutusu dolu/boş).
+        /// </summary>
+        public StackItem(string shellPath, string name)
+        {
+            Path = shellPath;
+            Name = name;
+            Extension = "";
+            Modified = DateTime.Now;
+            Created = DateTime.MinValue;
+        }
+
         public string Path { get; }
         public string Name { get; }
+        public bool IsVirtual => Path.StartsWith("::", StringComparison.Ordinal);
+        /// <summary>Gerçek dosya/klasör mü? Sağ tık menüsünde dosya işlemlerini açıp kapatmak için.</summary>
+        public bool IsRealFile => !IsVirtual;
         public string Extension { get; }
         public bool IsDirectory { get; }
         public DateTime Modified { get; }

@@ -9,6 +9,7 @@ namespace StackMeUp
 {
     public enum LayoutMode { Horizontal, Vertical }
     public enum SortMode { Newest, Name, Size, Type }
+    public enum ThemeMode { System, Dark, Light }
 
     /// <summary>Tüm kullanıcı ayarları. Her değişiklik PropertyChanged ile anında uygulanır ve kaydedilir.</summary>
     public sealed class Settings : Observable
@@ -31,6 +32,20 @@ namespace StackMeUp
         public bool LockPosition { get => _lock; set => Set(ref _lock, value); }
 
         // ---- Görünüm ----
+        ThemeMode _theme = ThemeMode.System;
+        public ThemeMode Theme
+        {
+            get => _theme;
+            set { Set(ref _theme, value); Raise(nameof(IsThemeSystem)); Raise(nameof(IsThemeDark)); Raise(nameof(IsThemeLight)); }
+        }
+        [JsonIgnore] public bool IsThemeSystem { get => Theme == ThemeMode.System; set { if (value) Theme = ThemeMode.System; } }
+        [JsonIgnore] public bool IsThemeDark { get => Theme == ThemeMode.Dark; set { if (value) Theme = ThemeMode.Dark; } }
+        [JsonIgnore] public bool IsThemeLight { get => Theme == ThemeMode.Light; set { if (value) Theme = ThemeMode.Light; } }
+
+        /// <summary>Başlık ve panel arka plan rengi ("#RRGGBB"). Boşsa temanın kendi rengi kullanılır.</summary>
+        string _bgColor = "";
+        public string BackgroundColor { get => _bgColor; set => Set(ref _bgColor, value ?? ""); }
+
         double _iconSize = 48;
         public double IconSize { get => _iconSize; set => Set(ref _iconSize, value); }
 

@@ -24,6 +24,7 @@ namespace StackMeUp
             DataContext = _s;
             AutoStartBox.IsChecked = Settings.AutoStart;
             BuildSwatches();
+            BuildBgSwatches();
             BuildCategories();
             RefreshFolders();
             RefreshRules();
@@ -47,6 +48,74 @@ namespace StackMeUp
                 dot.MouseLeftButtonUp += (_, _) => { _s.Accent = hex; BuildSwatches(); };
                 Swatches.Children.Add(dot);
             }
+        }
+
+        // ---- Arka plan rengi ----
+        static readonly (string Hex, string Name)[] BackgroundColors =
+        {
+            ("#1A1A1A", "Grafit"), ("#F6F6F7", "Beyaz"), ("#1E2A3A", "Gece mavisi"), ("#2B2238", "Mürdüm"),
+            ("#3A2A1E", "Kahve"), ("#12332B", "Orman"), ("#F5EBDD", "Krem"), ("#E7F0FF", "Buz mavisi"), ("#FFE8DF", "Şeftali"),
+        };
+
+        Border Dot(Brush fill, bool selected, string tip)
+        {
+            return new Border
+            {
+                Width = 28, Height = 28, CornerRadius = new CornerRadius(14), Margin = new Thickness(0, 0, 10, 6),
+                Background = fill, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = tip,
+                BorderBrush = new SolidColorBrush(selected ? Color.FromRgb(0x1F, 0x23, 0x28) : Color.FromRgb(0xC9, 0xCD, 0xD3)),
+                BorderThickness = new Thickness(selected ? 3 : 1),
+            };
+        }
+
+        void BuildBgSwatches()
+        {
+            BgSwatches.Children.Clear();
+
+            // Otomatik: temanın kendi rengi (yarı koyu yarı açık daire)
+            var auto = new LinearGradientBrush(Color.FromRgb(0x1A, 0x1A, 0x1A), Color.FromRgb(0xF6, 0xF6, 0xF7), 45)
+            {
+                GradientStops = { new GradientStop(Color.FromRgb(0x1A, 0x1A, 0x1A), 0.5), new GradientStop(Color.FromRgb(0xF6, 0xF6, 0xF7), 0.5) },
+            };
+            var autoDot = Dot(auto, string.IsNullOrWhiteSpace(_s.BackgroundColor), "Temaya göre (otomatik)");
+            autoDot.MouseLeftButtonUp += (_, _) => { _s.BackgroundColor = ""; BuildBgSwatches(); };
+            BgSwatches.Children.Add(autoDot);
+
+            var all = BackgroundColors.ToList();
+            // Paletten olmayan özel bir renk seçildiyse onu da göster
+            if (!string.IsNullOrWhiteSpace(_s.BackgroundColor) &&
+                !all.Any(c => string.Equals(c.Hex, _s.BackgroundColor, StringComparison.OrdinalIgnoreCase)))
+                all.Add((_s.BackgroundColor, "Özel renk"));
+
+            foreach (var (hex, name) in all)
+            {
+                Color color;
+                try { color = (Color)ColorConverter.ConvertFromString(hex); } catch { continue; }
+                var dot = Dot(new SolidColorBrush(color), string.Equals(hex, _s.BackgroundColor, StringComparison.OrdinalIgnoreCase), $"{name}  {hex}");
+                dot.MouseLeftButtonUp += (_, _) => { _s.BackgroundColor = hex; BuildBgSwatches(); };
+                BgSwatches.Children.Add(dot);
+            }
+
+            var custom = new Button { Content = "Özel…", Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 0, 6), VerticalAlignment = VerticalAlignment.Center };
+            custom.Click += (_, _) => PickCustomBackground();
+            BgSwatches.Children.Add(custom);
+        }
+
+        void PickCustomBackground()
+        {
+            using var dlg = new Forms.ColorDialog { FullOpen = true, AnyColor = true };
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(_s.BackgroundColor))
+                {
+                    var c = (Color)ColorConverter.ConvertFromString(_s.BackgroundColor);
+                    dlg.Color = System.Drawing.Color.FromArgb(c.R, c.G, c.B);
+                }
+            }
+            catch { }
+            if (dlg.ShowDialog() != Forms.DialogResult.OK) return;
+            _s.BackgroundColor = $"#{dlg.Color.R:X2}{dlg.Color.G:X2}{dlg.Color.B:X2}";
+            BuildBgSwatches();
         }
 
         // ---- Kurallar ----

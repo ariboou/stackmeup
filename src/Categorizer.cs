@@ -37,6 +37,34 @@ namespace StackMeUp
     public static class Categorizer
     {
         public const string Recent = "Son eklenenler";
+        public const string System = "Sistem";
+
+        /// <summary>
+        /// Windows'un sanal masaüstü öğeleri. Yalnızca Windows'un "Masaüstü simgesi ayarları"nda açık olanlar gösterilir
+        /// (Ayarlar > Kişiselleştirme > Temalar > Masaüstü simgesi ayarları).
+        /// </summary>
+        static readonly (string Clsid, string Name, bool ShownByDefault)[] SystemItems =
+        {
+            ("{645FF040-5081-101B-9F08-00AA002F954E}", "Geri Dönüşüm Kutusu", true),
+            ("{20D04FE0-3AEA-1069-A2D8-08002B30309D}", "Bu bilgisayar", false),
+            ("{59031a47-3f72-44a7-89c5-5595fe6b30ee}", Environment.UserName, false),
+            ("{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}", "Ağ", false),
+            ("{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}", "Denetim Masası", false),
+        };
+
+        public static List<StackItem> SystemStackItems()
+        {
+            var list = new List<StackItem>();
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel");
+            foreach (var (clsid, name, byDefault) in SystemItems)
+            {
+                // Değer 0 = gösteriliyor, 1 = gizli; hiç yoksa Windows'un varsayılanı geçerli
+                bool shown = key?.GetValue(clsid) is int v ? v == 0 : byDefault;
+                if (shown) list.Add(new StackItem("::" + clsid, name));
+            }
+            return list;
+        }
 
         // Hazır yığınların ekranda görünme sırası
         public static readonly string[] Order =
@@ -69,7 +97,7 @@ namespace StackMeUp
 
         /// <summary>Tüm yığın adları, ekrandaki sırayla: Son eklenenler, kullanıcı kuralları, hazır türler.</summary>
         public static List<string> AllNames(IEnumerable<CustomRule> rules) =>
-            new[] { Recent }
+            new[] { System, Recent }
                 .Concat(rules.Select(r => r.Name).Where(n => !string.IsNullOrWhiteSpace(n)))
                 .Concat(Order)
                 .Distinct(StringComparer.CurrentCultureIgnoreCase)

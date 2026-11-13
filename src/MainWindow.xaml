@@ -10,12 +10,12 @@
     <Window.Resources>
         <ContextMenu x:Key="ItemMenu">
             <MenuItem Header="Aç" Click="Menu_Open" FontWeight="SemiBold"/>
-            <MenuItem Header="Önizle" InputGestureText="Boşluk" Click="Menu_Preview"/>
-            <MenuItem Header="Dosya konumunu aç" Click="Menu_Reveal"/>
-            <MenuItem Header="Yolu kopyala" Click="Menu_CopyPath"/>
+            <MenuItem Header="Önizle" InputGestureText="Boşluk" Click="Menu_Preview" IsEnabled="{Binding IsRealFile}"/>
+            <MenuItem Header="Dosya konumunu aç" Click="Menu_Reveal" IsEnabled="{Binding IsRealFile}"/>
+            <MenuItem Header="Yolu kopyala" Click="Menu_CopyPath" IsEnabled="{Binding IsRealFile}"/>
             <Separator/>
-            <MenuItem Header="Yeniden adlandır…" Click="Menu_Rename"/>
-            <MenuItem Header="Geri Dönüşüm Kutusu'na at" Click="Menu_Recycle"/>
+            <MenuItem Header="Yeniden adlandır…" Click="Menu_Rename" IsEnabled="{Binding IsRealFile}"/>
+            <MenuItem Header="Geri Dönüşüm Kutusu'na at" Click="Menu_Recycle" IsEnabled="{Binding IsRealFile}"/>
         </ContextMenu>
 
         <ContextMenu x:Key="HeaderMenu">
@@ -47,7 +47,7 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#33FFFFFF"/>
+                    <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -61,7 +61,7 @@
                 <DockPanel>
                     <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="{DynamicResource ItemIconSize}" Height="{DynamicResource ItemIconSize}"
                            RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
-                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="{DynamicResource ItemFontSize}" VerticalAlignment="Center"
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource ItemFontSize}" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
@@ -76,7 +76,7 @@
                 <StackPanel>
                     <Image Source="{Binding Icon}" Width="{DynamicResource ItemIconSize}" Height="{DynamicResource ItemIconSize}"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
-                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="{DynamicResource ItemFontSize}" TextAlignment="Center"
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource ItemFontSize}" TextAlignment="Center"
                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="{DynamicResource TileTextHeight}" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>
@@ -89,14 +89,14 @@
                        Visibility="{DynamicResource FanVisibility}" RenderTransformOrigin="0.5,0.85" Opacity="0.85"
                        RenderOptions.BitmapScalingMode="HighQuality">
                     <Image.RenderTransform>
-                        <TransformGroup><RotateTransform Angle="-15"/><TranslateTransform X="-6" Y="1"/></TransformGroup>
+                        <TransformGroup><RotateTransform Angle="-11"/><TranslateTransform X="-5" Y="1"/></TransformGroup>
                     </Image.RenderTransform>
                 </Image>
                 <Image Source="{Binding Preview2}" Width="{DynamicResource IconSize}" Height="{DynamicResource IconSize}"
                        Visibility="{DynamicResource FanVisibility}" RenderTransformOrigin="0.5,0.85" Opacity="0.92"
                        RenderOptions.BitmapScalingMode="HighQuality">
                     <Image.RenderTransform>
-                        <TransformGroup><RotateTransform Angle="11"/><TranslateTransform X="6" Y="1"/></TransformGroup>
+                        <TransformGroup><RotateTransform Angle="8"/><TranslateTransform X="5" Y="1"/></TransformGroup>
                     </Image.RenderTransform>
                 </Image>
                 <Image Source="{Binding Cover}" Width="{DynamicResource IconSize}" Height="{DynamicResource IconSize}"
@@ -132,7 +132,7 @@
                     PreviewMouseLeftButtonDown="Header_Down" PreviewMouseMove="Header_Move" PreviewMouseLeftButtonUp="Header_Up">
                 <StackPanel>
                     <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource CoverTemplate}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12.5" FontWeight="SemiBold"
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="12.5" FontWeight="SemiBold"
                                TextAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
@@ -151,7 +151,7 @@
                     PreviewMouseLeftButtonDown="Header_Down" PreviewMouseMove="Header_Move" PreviewMouseLeftButtonUp="Header_Up">
                 <StackPanel>
                     <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource CoverTemplate}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12.5" FontWeight="SemiBold"
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="12.5" FontWeight="SemiBold"
                                TextAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>

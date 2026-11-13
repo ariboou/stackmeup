@@ -74,11 +74,24 @@
                             </DockPanel>
                             <TextBlock Style="{StaticResource Hint}" Text="Bir yığına tıklayınca açılan listedeki simgelerin ve yazıların boyutu."/>
 
-                            <TextBlock Style="{StaticResource Section}" Text="Arka plan koyuluğu"/>
+                            <TextBlock Style="{StaticResource Section}" Text="Tema"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="Sistem (Windows'a uy)" IsChecked="{Binding IsThemeSystem}"/>
+                                <RadioButton Content="Koyu" IsChecked="{Binding IsThemeDark}"/>
+                                <RadioButton Content="Açık" IsChecked="{Binding IsThemeLight}"/>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Arka plan rengi"/>
+                            <WrapPanel x:Name="BgSwatches"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                       Text="İlk seçenek temanın kendi rengidir. Yazı rengi, seçtiğin zemine göre otomatik açık ya da koyu olur."/>
+
+                            <TextBlock Style="{StaticResource Section}" Text="Arka plan yoğunluğu"/>
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Right" Width="44" TextAlignment="Right" Text="{Binding BackgroundOpacity, StringFormat={}{0:P0}}"/>
                                 <Slider Minimum="0.15" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="{Binding BackgroundOpacity}"/>
                             </DockPanel>
+                            <TextBlock Style="{StaticResource Hint}" Text="Yığın başlıklarının ne kadar saydam olacağı. Açılan panel her zaman okunacak kadar dolu kalır."/>
 
                             <TextBlock Style="{StaticResource Section}" Text="Vurgu rengi"/>
                             <WrapPanel x:Name="Swatches"/>
