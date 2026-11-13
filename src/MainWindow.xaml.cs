@@ -379,9 +379,8 @@ namespace StackMeUp
 
         // ---- Hareket eğrileri ----
         // Açılış: hafifçe esneyip yerine oturur. Öğeler: hızlı başlayıp yumuşakça durur. Kapanış: kısa ve sakin.
-        static IEasingFunction Spring => new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.22 };
-        static IEasingFunction Glide => new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 5 };
-        static IEasingFunction Settle => new QuadraticEase { EasingMode = EasingMode.EaseIn };
+        static IEasingFunction Smooth => new CubicEase { EasingMode = EasingMode.EaseOut };
+        static IEasingFunction SmoothIn => new CubicEase { EasingMode = EasingMode.EaseIn };
 
         static DoubleAnimation Anim(double? from, double to, int ms, IEasingFunction ease, int delayMs = 0) => new()
         {
@@ -399,22 +398,26 @@ namespace StackMeUp
             body.Opacity = 1;
         }
 
-        /// <summary>Panelin açılışı: ana eksende uzar, diğer eksende hafifçe büyür, belirginleşir.</summary>
+        /// <summary>
+        /// Panelin açılışı: tek eksende, sıfırdan yumuşakça açılır (0,24 sn, kübik yavaşlama).
+        /// Esneme/yaylanma bilinçli olarak yok: katmanlı pencerede takılma hissi veriyordu.
+        /// </summary>
         static void AnimateOpen(UIElement body, ScaleTransform scale, bool alongY)
         {
-            scale.BeginAnimation(alongY ? ScaleTransform.ScaleYProperty : ScaleTransform.ScaleXProperty, Anim(0.3, 1, 400, Spring));
-            scale.BeginAnimation(alongY ? ScaleTransform.ScaleXProperty : ScaleTransform.ScaleYProperty, Anim(0.94, 1, 400, Spring));
-            body.BeginAnimation(OpacityProperty, Anim(0, 1, 180, Glide));
+            var other = alongY ? ScaleTransform.ScaleXProperty : ScaleTransform.ScaleYProperty;
+            scale.BeginAnimation(other, null);
+            scale.SetValue(other, 1.0);
+            scale.BeginAnimation(alongY ? ScaleTransform.ScaleYProperty : ScaleTransform.ScaleXProperty, Anim(0, 1, 240, Smooth));
+            body.BeginAnimation(OpacityProperty, Anim(0, 1, 160, Smooth));
         }
 
         /// <summary>Panelin kapanışı; bittiğinde <paramref name="done"/> çağrılır.</summary>
         static void AnimateClose(UIElement body, ScaleTransform scale, bool alongY, Action done)
         {
-            var main = Anim(null, 0.55, 170, Settle);
+            var main = Anim(null, 0, 180, SmoothIn);
             main.Completed += (_, _) => done();
             scale.BeginAnimation(alongY ? ScaleTransform.ScaleYProperty : ScaleTransform.ScaleXProperty, main);
-            scale.BeginAnimation(alongY ? ScaleTransform.ScaleXProperty : ScaleTransform.ScaleYProperty, Anim(null, 0.97, 170, Settle));
-            body.BeginAnimation(OpacityProperty, Anim(null, 0, 150, Settle));
+            body.BeginAnimation(OpacityProperty, Anim(null, 0, 180, SmoothIn));
         }
 
         // ---- Yatay düzen: başlığın altına tek sütun liste ----
@@ -530,16 +533,16 @@ namespace StackMeUp
                     tt = new TranslateTransform();
                     row.RenderTransform = tt;
                 }
-                int delay = 40 + Math.Min(i, 14) * 24;
-                var move = Anim(fromStart ? -18 : 18, 0, 340, Glide, delay);
+                int delay = Math.Min(i, 15) * 22;
+                var move = Anim(fromStart ? -14 : 14, 0, 220, Smooth, delay);
                 move.FillBehavior = FillBehavior.Stop;
                 tt.BeginAnimation(vertical ? TranslateTransform.YProperty : TranslateTransform.XProperty, move);
                 row.Opacity = 0;
-                row.BeginAnimation(OpacityProperty, Anim(0, 1, 240, Glide, delay));
+                row.BeginAnimation(OpacityProperty, Anim(0, 1, 200, Smooth, delay));
             }
         }
 
-        /// <summary>Başlığa basınca hafifçe içeri çöker, bırakınca yaylanarak geri gelir.</summary>
+        /// <summary>Başlığa basınca çok hafifçe içeri çöker, bırakınca yumuşakça geri gelir.</summary>
         static void Press(object sender, bool down)
         {
             if (sender is not FrameworkElement fe) return;
@@ -550,8 +553,8 @@ namespace StackMeUp
                 fe.RenderTransformOrigin = new Point(0.5, 0.5);
             }
             var a = down
-                ? Anim(null, 0.95, 110, Glide)
-                : Anim(null, 1, 360, new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.6 });
+                ? Anim(null, 0.97, 90, Smooth)
+                : Anim(null, 1, 160, Smooth);
             st.BeginAnimation(ScaleTransform.ScaleXProperty, a);
             st.BeginAnimation(ScaleTransform.ScaleYProperty, a.Clone());
         }
