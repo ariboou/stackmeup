@@ -42,7 +42,7 @@ namespace StackMeUp
             if (Array.Exists(e.Args, a => a.Equals("--ayarlar", StringComparison.OrdinalIgnoreCase)))
                 Dispatcher.BeginInvoke(ShowSettings);
 
-            // Başka bir uygulama (ör. kapanırken WinStacks) simgeleri geri açarsa tekrar gizle
+            // Başka bir masaüstü aracı kapanırken simgeleri geri açarsa tekrar gizle
             var guard = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             guard.Tick += (_, _) =>
             {
