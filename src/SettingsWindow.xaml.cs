@@ -25,6 +25,7 @@ namespace StackMeUp
             InitializeComponent();
             DataContext = _s;
             AutoStartBox.IsChecked = Settings.AutoStart;
+            VersionText.Text = $"Sürüm {Updater.CurrentText}" + (Updater.CanSelfUpdate ? "" : "  ·  geliştirme sürümü (kendini güncellemez)");
             ApplyTheme();
             BuildCategories();
             RefreshFolders();
@@ -74,6 +75,21 @@ namespace StackMeUp
             if (hwnd != IntPtr.Zero) Desktop.SetDarkTitleBar(hwnd, _p.Dark);
             BuildSwatches();
             BuildBgSwatches();
+        }
+
+        // ---- Hakkında / güncelleme ----
+        async void CheckNow_Click(object sender, RoutedEventArgs e)
+        {
+            CheckNowButton.IsEnabled = false;
+            UpdateStatus.Text = "Denetleniyor…";
+            try { UpdateStatus.Text = await ((App)Application.Current).CheckForUpdatesAsync(manual: true); }
+            finally { CheckNowButton.IsEnabled = true; }
+        }
+
+        void OpenRepo_Click(object sender, RoutedEventArgs e)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Updater.RepoUrl) { UseShellExecute = true }); }
+            catch { }
         }
 
         void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

@@ -79,6 +79,12 @@ namespace StackMeUp
         bool _closeOnDesktop = true;
         public bool CloseOnDesktopClick { get => _closeOnDesktop; set => Set(ref _closeOnDesktop, value); }
 
+        bool _checkUpdates = true;
+        public bool CheckUpdates { get => _checkUpdates; set => Set(ref _checkUpdates, value); }
+
+        bool _autoInstall = true;
+        public bool AutoInstallUpdates { get => _autoInstall; set => Set(ref _autoInstall, value); }
+
         bool _hideIcons = true;
         public bool HideDesktopIcons { get => _hideIcons; set => Set(ref _hideIcons, value); }
 

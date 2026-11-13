@@ -9,6 +9,8 @@
     <AssemblyName>StackMeUp</AssemblyName>
     <RootNamespace>StackMeUp</RootNamespace>
     <ApplicationIcon>assets\StackMeUp.ico</ApplicationIcon>
+    <!-- Yeni sürüm yayınlarken bunu artır; GitHub Release etiketi de "v" + bu sayı olmalı (ör. v1.0.1) -->
+    <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="assets\StackMeUp.ico" />

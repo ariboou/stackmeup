@@ -682,5 +682,46 @@
                 <ListBox x:Name="FoldersList" Margin="0,16,0,0"/>
             </DockPanel>
         </TabItem>
+        <!-- ================= HAKKINDA ================= -->
+        <TabItem Header="Hakkında" Tag="&#xE946;">
+            <ScrollViewer Style="{StaticResource Page}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/assets/StackMeUp.ico" Width="56" Height="56" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource PageTitle}" Text="StackMeUp"/>
+                            <TextBlock x:Name="VersionText" Style="{StaticResource PageSub}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource Section}" Text="GÜNCELLEMELER"/>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <CheckBox Content="Yeni sürümleri otomatik denetle" IsChecked="{Binding CheckUpdates}"/>
+                            <CheckBox Content="Yeni sürüm bulununca kendiliğinden kur" IsChecked="{Binding AutoInstallUpdates}"
+                                      IsEnabled="{Binding CheckUpdates}"/>
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="Kurulum birkaç saniye sürer: uygulama yeni sürümle kendiliğinden yeniden açılır, ayarların korunur."/>
+                            <Border Style="{StaticResource Divider}"/>
+                            <DockPanel>
+                                <Button x:Name="CheckNowButton" DockPanel.Dock="Right" Style="{StaticResource Primary}" Margin="0"
+                                        Content="Şimdi denetle" Click="CheckNow_Click"/>
+                                <TextBlock x:Name="UpdateStatus" Style="{StaticResource Label}" Foreground="{DynamicResource B.SubText}"
+                                           TextWrapping="Wrap" Text="Son sürümü GitHub'dan denetler."/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Style="{StaticResource Section}" Text="PROJE"/>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Margin="0" Content="GitHub'da aç" Click="OpenRepo_Click"/>
+                            <TextBlock Style="{StaticResource Label}" Text="Kaynak kod, sürümler ve indirme sayfası"/>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
     </TabControl>
 </Window>
