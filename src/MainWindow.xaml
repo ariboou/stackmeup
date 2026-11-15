@@ -199,7 +199,7 @@
                     <Border x:Name="HBody" Background="{DynamicResource PanelBrush}" CornerRadius="14" Padding="6"
                             HorizontalAlignment="Left" Visibility="Collapsed" RenderTransformOrigin="0.2,0">
                         <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
-                        <ScrollViewer x:Name="HBodyScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+                        <ScrollViewer x:Name="HBodyScroll" VerticalScrollBarVisibility="Hidden" Focusable="False">
                             <ItemsControl x:Name="HBodyItems" ItemsSource="{Binding Items}" ItemTemplate="{StaticResource RowTemplate}" Focusable="False"/>
                         </ScrollViewer>
                     </Border>
@@ -211,7 +211,7 @@
         <Popup x:Name="SidePopup" AllowsTransparency="True" StaysOpen="True" PopupAnimation="None" Placement="Left">
             <Border x:Name="SideBody" Background="{DynamicResource PanelBrush}" CornerRadius="14" Padding="6" Margin="8,0">
                 <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
-                <ScrollViewer x:Name="SideScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                <ScrollViewer x:Name="SideScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
                               Focusable="False" PreviewMouseWheel="SideScroll_Wheel">
                     <ItemsControl x:Name="SideItems" ItemsSource="{Binding Items}" ItemTemplate="{StaticResource TileTemplate}" Focusable="False">
                         <ItemsControl.ItemsPanel>

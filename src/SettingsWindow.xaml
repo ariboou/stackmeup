@@ -321,7 +321,7 @@
                                 <Border Background="{DynamicResource B.Surface}" BorderBrush="{DynamicResource B.Border}" BorderThickness="1"
                                         CornerRadius="8" Margin="0,4,0,0" Padding="4"
                                         MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
-                                    <ScrollViewer MaxHeight="260"><ItemsPresenter/></ScrollViewer>
+                                    <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Hidden"><ItemsPresenter/></ScrollViewer>
                                 </Border>
                             </Popup>
                         </Grid>
@@ -364,7 +364,7 @@
                     <ControlTemplate TargetType="ListBox">
                         <Border Background="{DynamicResource B.Control}" BorderBrush="{DynamicResource B.Border}" BorderThickness="1"
                                 CornerRadius="8" Padding="4">
-                            <ScrollViewer Focusable="False"><ItemsPresenter/></ScrollViewer>
+                            <ScrollViewer Focusable="False" VerticalScrollBarVisibility="Hidden"><ItemsPresenter/></ScrollViewer>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -465,7 +465,7 @@
 
         <!-- Sayfa kaydırma alanı -->
         <Style x:Key="Page" TargetType="ScrollViewer">
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Padding" Value="28,24,22,28"/>
         </Style>

@@ -777,8 +777,8 @@ namespace StackMeUp
                 var list = new ItemsControl { ItemsSource = items, ItemTemplate = (DataTemplate)Resources["RowTemplate"], Tag = level + 1, Focusable = false };
                 content = new ScrollViewer
                 {
-                    Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false,
-                    MaxHeight = Math.Max(200, WorkArea().Height - 80),
+                    Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, Focusable = false,
+                    MaxHeight = Math.Max(200, WorkArea().Height - 70),
                 };
                 content.PreviewMouseWheel += (s, e) =>
                 {
@@ -800,13 +800,42 @@ namespace StackMeUp
             };
             body.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
 
-            // Dikey düzendeki yatay şeritten açılırsa aşağıya, listeden açılırsa sağa
+            // Konumu kendimiz hesaplıyoruz: WPF bu masaüstü penceresinde ekran sınırlarını yanlış
+            // bulup paneli listenin üstüne itiyordu. Dikey şeritten açılırsa satırın altına, listeden açılırsa sağına;
+            // sağda yer yoksa soluna; ekranın altına taşacaksa yukarı kaydırılır.
             bool fromStrip = SideItems.IsAncestorOf(row);
+            body.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double w = body.DesiredSize.Width, h = body.DesiredSize.Height;
+            var wa = WorkArea();
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var rowTopLeft = row.PointToScreen(new Point(0, 0));
+            double rx = rowTopLeft.X / dpi.DpiScaleX, ry = rowTopLeft.Y / dpi.DpiScaleY; // DIP
+            double dx, dy;
+            if (fromStrip)
+            {
+                dx = 0;
+                dy = row.ActualHeight + 6;
+            }
+            else
+            {
+                const double gap = 8;
+                dx = rx + row.ActualWidth + gap + w <= wa.Right ? row.ActualWidth + gap : -w - gap;
+                dy = -6;
+            }
+            // Ekranın altına taşmasın, üstüne de çıkmasın
+            if (ry + dy + h > wa.Bottom - 8) dy = wa.Bottom - 8 - h - ry;
+            if (ry + dy < wa.Top + 8) dy = wa.Top + 8 - ry;
+
             var popup = new Popup
             {
                 Child = body, AllowsTransparency = true, StaysOpen = true, PopupAnimation = PopupAnimation.None,
-                PlacementTarget = row, Placement = fromStrip ? PlacementMode.Bottom : PlacementMode.Right,
-                HorizontalOffset = fromStrip ? 0 : 6, VerticalOffset = fromStrip ? 6 : -6,
+                PlacementTarget = row, Placement = PlacementMode.Custom,
+                CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
+                {
+                    // Geri çağrı cihaz pikseliyle çalışabilir: DIP değerlerini satırın oranına göre çevir
+                    double k = row.ActualWidth > 0 ? targetSize.Width / row.ActualWidth : 1;
+                    return new[] { new CustomPopupPlacement(new Point(dx * k, dy * k), PopupPrimaryAxis.None) };
+                },
             };
             RootGrid.Children.Add(popup);
             popup.IsOpen = true;
