@@ -150,6 +150,7 @@ namespace StackMeUp
                 case nameof(Settings.Accent):
                 case nameof(Settings.FanPreview):
                 case nameof(Settings.ShowCount):
+                case nameof(Settings.FolderCascade):
                 case nameof(Settings.Theme):
                 case nameof(Settings.BackgroundColor):
                     ApplyAppearance();
@@ -204,6 +205,7 @@ namespace StackMeUp
             Resources["HeaderWidth"] = Math.Max(96, Math.Round(s * 1.3 + 28));
             Resources["FanVisibility"] = _s.FanPreview ? Visibility.Visible : Visibility.Collapsed;
             Resources["CountVisibility"] = _s.ShowCount ? Visibility.Visible : Visibility.Collapsed;
+            Resources["ChevronVisibility"] = _s.FolderCascade ? Visibility.Visible : Visibility.Collapsed;
 
             // Açılan dosyalar
             double i = _s.ItemSize;
@@ -216,6 +218,7 @@ namespace StackMeUp
 
         void ApplyLayout()
         {
+            CloseCascade();
             foreach (var g in _groups) g.IsExpanded = false;
             ShowHBody(null, animate: false);
             ShowSide(null, animate: false);
@@ -379,6 +382,7 @@ namespace StackMeUp
 
         void ShowBody(StackGroup? g, bool animate)
         {
+            CloseCascade();
             if (Horizontal) ShowHBody(g, animate);
             else ShowSide(g, animate);
         }
@@ -603,6 +607,7 @@ namespace StackMeUp
             _hdrGroup = null;
             ((UIElement)sender).ReleaseMouseCapture();
             Press(sender, down: false);
+            CloseCascade();
             ShowSide(null, animate: false);
             try { DragMove(); } catch (InvalidOperationException) { return; }
             _s.Left = Left;
@@ -676,7 +681,140 @@ namespace StackMeUp
             _itemDownItem = null;
             if (item is null) return;
             var p = e.GetPosition(fe);
-            if (p.X >= 0 && p.Y >= 0 && p.X <= fe.ActualWidth && p.Y <= fe.ActualHeight) Open(item.Path);
+            if (p.X < 0 || p.Y < 0 || p.X > fe.ActualWidth || p.Y > fe.ActualHeight) return;
+            if (item.IsFolder && _s.FolderCascade) ToggleFolder(item, fe);
+            else Open(item.Path);
+        }
+
+        // =====================================================================
+        //  Klasörlerin yana açılması (Mac gibi): klasör → içeriği sağda yeni panel → alt klasör → bir sağında
+        // =====================================================================
+
+        readonly List<(Popup Popup, StackItem Folder)> _cascade = new();
+
+        /// <summary>Satırın hangi seviyede olduğu: ana liste 0, ilk yan panel 1, …</summary>
+        static int LevelOf(DependencyObject d)
+        {
+            for (var cur = d; cur != null; cur = VisualTreeHelper.GetParent(cur) ?? LogicalTreeHelper.GetParent(cur))
+                if (cur is ItemsControl ic && ic.Tag is int level) return level;
+            return 0;
+        }
+
+        /// <summary>Verilen seviyeden itibaren açık yan panelleri kapatır (0 = hepsi).</summary>
+        void CloseCascade(int fromLevel = 0)
+        {
+            for (int i = _cascade.Count - 1; i >= fromLevel; i--)
+            {
+                var (popup, folder) = _cascade[i];
+                popup.IsOpen = false;
+                RootGrid.Children.Remove(popup);
+                folder.IsOpen = false;
+                _cascade.RemoveAt(i);
+            }
+        }
+
+        static List<StackItem> ListFolder(string path)
+        {
+            var list = new List<StackItem>();
+            try
+            {
+                foreach (var info in new DirectoryInfo(path).EnumerateFileSystemInfos())
+                {
+                    try
+                    {
+                        if ((info.Attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0) continue;
+                        list.Add(new StackItem(info.FullName, info is DirectoryInfo, info.LastWriteTime, info.CreationTime,
+                            info is FileInfo fi ? fi.Length : 0));
+                    }
+                    catch { }
+                }
+            }
+            catch { /* erişim yoksa boş göster */ }
+            var cmp = StringComparer.CurrentCultureIgnoreCase;
+            return list.OrderByDescending(i => i.IsDirectory).ThenBy(i => i.Name, cmp).Take(400).ToList();
+        }
+
+        void ToggleFolder(StackItem folder, FrameworkElement row)
+        {
+            int level = LevelOf(row);
+            bool wasOpen = folder.IsOpen;
+            CloseCascade(level);
+            if (wasOpen) return;
+
+            var items = ListFolder(folder.Path);
+            _icons.Request(items);
+            folder.IsOpen = true;
+
+            // Başlık: klasör adı + Dosya Gezgini'nde aç
+            var title = new TextBlock
+            {
+                Text = folder.Name, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(4, 0, 8, 0),
+            };
+            title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            title.SetResourceReference(TextBlock.FontSizeProperty, "ItemFontSize");
+            var openBtn = new TextBlock
+            {
+                Text = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 13, Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(6), ToolTip = "Dosya Gezgini'nde aç", Opacity = 0.8,
+            };
+            openBtn.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            openBtn.MouseLeftButtonUp += (_, e) => { e.Handled = true; Open(folder.Path); };
+            var header = new DockPanel { Margin = new Thickness(2, 0, 0, 4) };
+            DockPanel.SetDock(openBtn, Dock.Right);
+            header.Children.Add(openBtn);
+            header.Children.Add(title);
+
+            FrameworkElement content;
+            if (items.Count == 0)
+            {
+                var empty = new TextBlock { Text = "Boş klasör", Opacity = 0.6, Margin = new Thickness(8, 6, 8, 8) };
+                empty.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                content = empty;
+            }
+            else
+            {
+                var list = new ItemsControl { ItemsSource = items, ItemTemplate = (DataTemplate)Resources["RowTemplate"], Tag = level + 1, Focusable = false };
+                content = new ScrollViewer
+                {
+                    Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false,
+                    MaxHeight = Math.Max(200, WorkArea().Height - 80),
+                };
+                content.PreviewMouseWheel += (s, e) =>
+                {
+                    var sv = (ScrollViewer)s;
+                    sv.ScrollToVerticalOffset(sv.VerticalOffset - e.Delta / 3.0);
+                    e.Handled = true;
+                };
+            }
+            var dock = new DockPanel();
+            DockPanel.SetDock(header, Dock.Top);
+            dock.Children.Add(header);
+            dock.Children.Add(content);
+
+            var scale = new ScaleTransform(1, 1);
+            var body = new Border
+            {
+                CornerRadius = new CornerRadius(14), Padding = new Thickness(6), Child = dock,
+                Width = Math.Max(240, _s.ItemSize * 2 + 200), RenderTransform = scale, RenderTransformOrigin = new Point(0, 0.2),
+            };
+            body.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+
+            // Dikey düzendeki yatay şeritten açılırsa aşağıya, listeden açılırsa sağa
+            bool fromStrip = SideItems.IsAncestorOf(row);
+            var popup = new Popup
+            {
+                Child = body, AllowsTransparency = true, StaysOpen = true, PopupAnimation = PopupAnimation.None,
+                PlacementTarget = row, Placement = fromStrip ? PlacementMode.Bottom : PlacementMode.Right,
+                HorizontalOffset = fromStrip ? 0 : 6, VerticalOffset = fromStrip ? 6 : -6,
+            };
+            RootGrid.Children.Add(popup);
+            popup.IsOpen = true;
+            if (PresentationSource.FromVisual(body) is HwndSource src) Desktop.PlaceJustAbove(src.Handle, Hwnd);
+            _cascade.Add((popup, folder));
+
+            AnimateOpen(body, scale, alongY: fromStrip);
+            if (content is ScrollViewer { Content: ItemsControl ic }) Cascade(ic, vertical: true, fromStart: true);
         }
 
         // =====================================================================

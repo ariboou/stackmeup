@@ -53,6 +53,12 @@ namespace StackMeUp
         public bool IsVirtual => Path.StartsWith("::", StringComparison.Ordinal);
         /// <summary>Gerçek dosya/klasör mü? Sağ tık menüsünde dosya işlemlerini açıp kapatmak için.</summary>
         public bool IsRealFile => !IsVirtual;
+        /// <summary>Gerçek bir klasör mü? (Mac gibi yana açılabilir)</summary>
+        public bool IsFolder => IsDirectory && !IsVirtual;
+
+        /// <summary>Bu klasörün içeriği şu an yanda açık mı?</summary>
+        bool _isOpen;
+        public bool IsOpen { get => _isOpen; set => Set(ref _isOpen, value); }
         public string Extension { get; }
         public bool IsDirectory { get; }
         public DateTime Modified { get; }

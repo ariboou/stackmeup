@@ -54,22 +54,35 @@
 
         <!-- Yatay düzen: aşağı düşen liste satırı (simge + ad) -->
         <DataTemplate x:Key="RowTemplate" DataType="{x:Type local:StackItem}">
-            <Border Style="{StaticResource ItemTile}" Padding="8,5" Margin="0,1"
+            <Border x:Name="Row" Style="{StaticResource ItemTile}" Padding="8,5" Margin="0,1"
                     ToolTip="{Binding Path}" ContextMenu="{StaticResource ItemMenu}"
                     MouseEnter="Item_Enter" MouseLeave="Item_Leave"
                     MouseLeftButtonDown="Item_MouseDown" MouseMove="Item_MouseMove" MouseLeftButtonUp="Item_MouseUp">
                 <DockPanel>
                     <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="{DynamicResource ItemIconSize}" Height="{DynamicResource ItemIconSize}"
                            RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
+                    <!-- Klasörlerde: yana açılır işareti -->
+                    <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                               Foreground="{DynamicResource TextBrush}" Opacity="0.6" VerticalAlignment="Center" Margin="8,0,2,0"
+                               Visibility="Collapsed"/>
                     <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource ItemFontSize}" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                    <Setter TargetName="Chevron" Property="Visibility" Value="{DynamicResource ChevronVisibility}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource HeaderActiveBrush}"/>
+                    <Setter TargetName="Chevron" Property="Opacity" Value="1"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Dikey düzen: yana açılan şeritteki kutucuk (simge üstte, ad altta) -->
         <DataTemplate x:Key="TileTemplate" DataType="{x:Type local:StackItem}">
-            <Border Style="{StaticResource ItemTile}" Width="{DynamicResource ItemTileWidth}" Padding="4,8,4,6" Margin="1,0"
+            <Border x:Name="Tile" Style="{StaticResource ItemTile}" Width="{DynamicResource ItemTileWidth}" Padding="4,8,4,6" Margin="1,0"
                     ToolTip="{Binding Path}" ContextMenu="{StaticResource ItemMenu}"
                     MouseEnter="Item_Enter" MouseLeave="Item_Leave"
                     MouseLeftButtonDown="Item_MouseDown" MouseMove="Item_MouseMove" MouseLeftButtonUp="Item_MouseUp">
@@ -80,6 +93,11 @@
                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="{DynamicResource TileTextHeight}" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource HeaderActiveBrush}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Yığın kapağı: ilk üç dosya yelpaze gibi açılmış + sayı rozeti -->
@@ -164,7 +182,7 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" Focusable="False">
             <StackPanel>
                 <!-- Dikey düzen -->

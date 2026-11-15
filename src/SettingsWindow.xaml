@@ -589,6 +589,7 @@
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
                             <CheckBox Content="Masaüstüne ya da başka bir pencereye tıklayınca yığınları kapat" IsChecked="{Binding CloseOnDesktopClick}"/>
+                            <CheckBox Content="Klasörler tıklanınca içerikleri yanda açılsın (Mac gibi)" IsChecked="{Binding FolderCascade}"/>
                             <TextBlock Style="{StaticResource Hint}"
                                        Text="Esc açık yığını kapatır. Bir dosyanın üstündeyken Boşluk onu açmadan önizler (QuickLook ile)."/>
                         </StackPanel>
@@ -616,7 +617,7 @@
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
                             <CheckBox Content="Windows'un kendi masaüstü simgelerini gizle" IsChecked="{Binding HideDesktopIcons}"/>
-                            <CheckBox x:Name="AutoStartBox" Content="Windows ile birlikte başlat" Click="AutoStart_Click"/>
+                            <CheckBox Content="Windows ile birlikte başlat" IsChecked="{Binding StartWithWindows}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

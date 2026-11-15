@@ -24,7 +24,6 @@ namespace StackMeUp
             _p = Theme.ForSettings(_s);
             InitializeComponent();
             DataContext = _s;
-            AutoStartBox.IsChecked = Settings.AutoStart;
             VersionText.Text = $"Sürüm {Updater.CurrentText}" + (Updater.CanSelfUpdate ? "" : "  ·  geliştirme sürümü (kendini güncellemez)");
             ApplyTheme();
             BuildCategories();
@@ -305,13 +304,6 @@ namespace StackMeUp
         {
             _s.Left = null;
             _s.Top = null;
-        }
-
-        void AutoStart_Click(object sender, RoutedEventArgs e)
-        {
-            try { Settings.AutoStart = AutoStartBox.IsChecked == true; }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "StackMeUp"); }
-            AutoStartBox.IsChecked = Settings.AutoStart;
         }
 
         void Close_Click(object sender, RoutedEventArgs e) => Close();

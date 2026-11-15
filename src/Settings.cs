@@ -76,8 +76,16 @@ namespace StackMeUp
         int _recentHours = 24;
         public int RecentHours { get => _recentHours; set => Set(ref _recentHours, Math.Clamp(value, 1, 24 * 30)); }
 
+        /// <summary>Listede klasöre tıklayınca içeriği yanda yeni bir panelde açılsın (Mac gibi); kapalıysa Dosya Gezgini'nde açılır.</summary>
+        bool _folderCascade = true;
+        public bool FolderCascade { get => _folderCascade; set => Set(ref _folderCascade, value); }
+
         bool _closeOnDesktop = true;
         public bool CloseOnDesktopClick { get => _closeOnDesktop; set => Set(ref _closeOnDesktop, value); }
+
+        /// <summary>Windows açılınca başlat. Kayıt her açılışta exe'nin güncel yoluna göre senkronlanır.</summary>
+        bool _startWithWindows = true;
+        public bool StartWithWindows { get => _startWithWindows; set => Set(ref _startWithWindows, value); }
 
         bool _checkUpdates = true;
         public bool CheckUpdates { get => _checkUpdates; set => Set(ref _checkUpdates, value); }
@@ -140,6 +148,23 @@ namespace StackMeUp
         }
 
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+        /// <summary>Başlangıç kaydını ayara ve exe'nin şu anki yoluna göre düzeltir.</summary>
+        public void SyncAutoStart()
+        {
+            try
+            {
+                using var k = Registry.CurrentUser.CreateSubKey(RunKey);
+                var want = $"\"{Environment.ProcessPath}\"";
+                if (StartWithWindows)
+                {
+                    if (!string.Equals(k.GetValue("StackMeUp") as string, want, StringComparison.OrdinalIgnoreCase))
+                        k.SetValue("StackMeUp", want);
+                }
+                else k.DeleteValue("StackMeUp", false);
+            }
+            catch { /* kayıt defterine yazılamazsa sessizce geç */ }
+        }
 
         public static bool AutoStart
         {

@@ -34,6 +34,7 @@ namespace StackMeUp
             base.OnStartup(e);
             _settings = Settings.Load();
             Updater.CleanupOld();
+            _settings.SyncAutoStart();
 
             // Ne olursa olsun masaüstü simgeleri gizli kalmasın
             AppDomain.CurrentDomain.UnhandledException += (_, a) => { Log(a.ExceptionObject); RestoreIcons(); };
@@ -75,6 +76,7 @@ namespace StackMeUp
                 _saveTimer.Stop();
                 _saveTimer.Start();
                 if (a.PropertyName == nameof(Settings.HideDesktopIcons)) ApplyIconHiding();
+                else if (a.PropertyName == nameof(Settings.StartWithWindows)) _settings.SyncAutoStart();
                 else _win?.OnSettingChanged(a.PropertyName);
             };
         }
@@ -92,7 +94,8 @@ namespace StackMeUp
             catch (Exception ex)
             {
                 if (manual) return "Denetlenemedi: internet bağlantısını kontrol et.";
-                Log(ex);
+                // Açılışta internet henüz yoksa normal; yalnızca beklenmedik hataları kaydet
+                if (ex is not System.Net.Http.HttpRequestException and not System.Threading.Tasks.TaskCanceledException) Log(ex);
                 return "";
             }
             if (r is null) return $"En güncel sürümü kullanıyorsun ({Updater.CurrentText}).";
